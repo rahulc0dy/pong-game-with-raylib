@@ -7,6 +7,8 @@ add_executable(FlappyBird
         src/main.cpp
         src/ball.cpp
         src/ball.h
+        src/paddle.cpp
+        src/paddle.h
 )
 
 set_target_properties(FlappyBird PROPERTIES LINK_FLAGS "-mconsole")
