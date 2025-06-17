@@ -1,25 +1,31 @@
 #include <raylib.h>
 #include <string>
 
+#include "ball.h"
+
+Color darkGreen = Color{20, 160, 133, 255};
+
 
 int main() {
-    Color darkGreen = Color{20, 160, 133, 255};
-
     const int screenWidth = 800;
     const int screenHeight = 600;
 
+    const int ballRadius = 10;
+    const float ballSpeed = 100.0f;
+
     InitWindow(screenWidth, screenHeight, "Pong");
     SetWindowState(FLAG_WINDOW_RESIZABLE);
+    SetTargetFPS(120);
 
-    float ballX = 400.0f;
-    float ballY = 300.0f;
-    float ballSize = 10.0f;
-    float ballSpeed = 2.0f;
+    Ball ball(screenWidth / 2, screenHeight / 2, ballSpeed, ballSpeed, ballRadius);
 
 
     while (!WindowShouldClose()) {
+        const int screenWidth = GetScreenWidth();
+        const int screenHeight = GetScreenHeight();
+        const float delta = GetFrameTime();
+
         // Frame Rate and Timing
-        const float delta = GetFrameTime() * 1000;
         const int fps = GetFPS();
         std::string fpsDisplay = "FPS: " + std::to_string(fps);
         DrawText(fpsDisplay.c_str(), 10, 10, 20, WHITE);
@@ -30,23 +36,20 @@ int main() {
         }
 
         // 2. Updating Positions
-        if (IsKeyDown(KEY_RIGHT) and ballX < screenWidth - ballSize) {
-            ballX += ballSpeed * delta; // Move right
+        ball.x += ball.speed_x * delta;
+        ball.y += ball.speed_y * delta;
+        // Bounce off walls
+        if (ball.x - ball.radius < 0 || ball.x + ball.radius > screenWidth) {
+            ball.speed_x *= -1; // Reverse direction on x-axis
         }
-        if (IsKeyDown(KEY_LEFT) and ballX > ballSize) {
-            ballX -= ballSpeed * delta; // Move left
-        }
-        if (IsKeyDown(KEY_UP) and ballY > ballSize) {
-            ballY -= ballSpeed * delta; // Move up
-        }
-        if (IsKeyDown(KEY_DOWN) and ballY < screenHeight - ballSize) {
-            ballY += ballSpeed * delta; // Move down
+        if (ball.y - ball.radius < 0 || ball.y + ball.radius > screenHeight) {
+            ball.speed_y *= -1; // Reverse direction on y-axis
         }
 
         // 3. Drawing
         BeginDrawing();
         ClearBackground(darkGreen);
-        DrawCircle(ballX, ballY, ballSize, WHITE);
+        ball.draw();
         EndDrawing();
     }
 
