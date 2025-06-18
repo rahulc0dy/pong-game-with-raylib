@@ -6,7 +6,7 @@
 #include "paddle.h"
 
 
-const Color background = Color{51, 52, 70, 255};
+const Color background = Color{18, 26, 28, 255};
 const Color accent = Color{3, 76, 83, 255};
 
 
