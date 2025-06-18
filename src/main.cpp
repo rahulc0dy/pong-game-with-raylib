@@ -9,14 +9,16 @@
 const Color background = Color{18, 26, 28, 255};
 const Color accent = Color{3, 76, 83, 255};
 
+const Color playerColor = Color{146, 255, 236, 255};
+const Color computerColor = Color{234, 134, 161, 255};
 
 int main() {
     int screenWidth = 1200;
     int screenHeight = 800;
 
     const int ballRadius = 10;
-    const float ballSpeed = 300.0f;
-    const float paddleSpeed = 400.0f;
+    const float ballSpeed = 400.0f;
+    const float paddleSpeed = 600.0f;
     const int paddleWidth = 20;
     const int paddleHeight = 100;
     const int topOffset = 80;
@@ -38,7 +40,7 @@ int main() {
 
     SetWindowState(FLAG_WINDOW_RESIZABLE);
     SetWindowIcon(ballImage);
-    SetTargetFPS(120);
+    SetTargetFPS(1000);
 
     Ball ball(screenWidth / 2, screenHeight / 2, ballSpeed, ballSpeed, ballRadius, ballTexture, topOffset);
 
@@ -90,8 +92,8 @@ int main() {
         computer.draw();
 
         // scores
-        DrawText(TextFormat("%i", ball.playerScore), screenWidth / 4, 20, 32, WHITE);
-        DrawText(TextFormat("%i", ball.cpuScore), 3 * screenWidth / 4, 20, 32, WHITE);
+        DrawText(TextFormat("%i", ball.cpuScore), screenWidth / 4, 20, 32, playerColor);
+        DrawText(TextFormat("%i", ball.playerScore), 3 * screenWidth / 4, 20, 32, computerColor);
 
         // FPS Counter
         DrawFPS(GetScreenWidth() - 100, 10);
