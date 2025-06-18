@@ -5,10 +5,10 @@
 #include "ball.h"
 #include "paddle.h"
 
-const Color darkGreen = Color{20, 160, 133, 255};
-const Color green = Color{38, 185, 154, 255};
-const Color lightGreen = Color{129, 204, 184, 255};
-const Color yellow = Color{243, 213, 91, 255};
+
+const Color background = Color{51, 52, 70, 255};
+const Color accent = Color{3, 76, 83, 255};
+
 
 int main() {
     int screenWidth = 1200;
@@ -17,15 +17,33 @@ int main() {
     const int ballRadius = 10;
     const float ballSpeed = 300.0f;
     const float paddleSpeed = 400.0f;
+    const int paddleWidth = 20;
+    const int paddleHeight = 100;
+    const int topOffset = 80;
+
 
     InitWindow(screenWidth, screenHeight, "Pong");
+
+    Image ballImage = LoadImage("D:/Programming/CPP/Flappy Bird/assets/ball.png");
+    Image paddle1 = LoadImage("D:/Programming/CPP/Flappy Bird/assets/paddle1.png");
+    Image paddle2 = LoadImage("D:/Programming/CPP/Flappy Bird/assets/paddle2.png");
+
+    ImageResize(&paddle1, paddleWidth, paddleHeight);
+    ImageResize(&paddle2, paddleWidth, paddleHeight);
+    ImageResize(&ballImage, ballRadius * 2, ballRadius * 2);
+
+    const Texture2D ballTexture = LoadTextureFromImage(ballImage);
+    const Texture2D paddleTexture1 = LoadTextureFromImage(paddle1);
+    const Texture2D paddleTexture2 = LoadTextureFromImage(paddle2);
+
     SetWindowState(FLAG_WINDOW_RESIZABLE);
+    SetWindowIcon(ballImage);
     SetTargetFPS(120);
 
-    Ball ball(screenWidth / 2, screenHeight / 2, ballSpeed, ballSpeed, ballRadius, yellow);
+    Ball ball(screenWidth / 2, screenHeight / 2, ballSpeed, ballSpeed, ballRadius, ballTexture, topOffset);
 
-    Paddle player(10, 10, 20, 100, paddleSpeed);
-    ComputerPaddle computer(screenWidth - 30, 10, 20, 100, paddleSpeed / 1.5f);
+    Paddle player(10, screenHeight / 4, paddleWidth, paddleHeight, paddleSpeed, paddleTexture1, topOffset);
+    ComputerPaddle computer(screenWidth - 30, 10, paddleWidth, paddleHeight, paddleSpeed / 1.5f, paddleTexture2);
 
 
     while (!WindowShouldClose()) {
@@ -60,12 +78,11 @@ int main() {
 
         // 3. Drawing
         BeginDrawing();
-        ClearBackground(darkGreen);
+        ClearBackground(background);
 
         // Court
-        DrawRectangle(screenWidth / 2, 0, screenWidth / 2, screenHeight, lightGreen);
-        DrawLine(screenWidth / 2, 0, screenWidth / 2, screenHeight, WHITE);
-        DrawCircle(screenWidth / 2, screenHeight / 2, 150, green);
+        DrawLine(screenWidth / 2, 0, screenWidth / 2, screenHeight, Color{184, 207, 206, 150});
+        DrawRectangle(0, 0, screenWidth, topOffset, accent);
 
         // Ball and Paddles
         ball.draw();
@@ -77,11 +94,13 @@ int main() {
         DrawText(TextFormat("%i", ball.cpuScore), 3 * screenWidth / 4, 20, 32, WHITE);
 
         // FPS Counter
-        DrawText(TextFormat("FPS: %i", fps), GetScreenWidth() - 100, 10, 16, WHITE);
+        DrawFPS(GetScreenWidth() - 100, 10);
 
         EndDrawing();
     }
 
+    UnloadImage(ballImage);
+    UnloadTexture(ballTexture);
     CloseWindow();
     return 0;
 }

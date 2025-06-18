@@ -5,12 +5,13 @@
 #include "ball.h"
 #include <raylib.h>
 
-Ball::Ball(float x, float y, float speed_x, float speed_y, int radius, Color color)
-    : x(x), y(y), speed_x(speed_x), speed_y(speed_y), radius(radius), ballColor(color) {
+Ball::Ball(float x, float y, float speed_x, float speed_y, int radius, Texture2D texture, int topOffset)
+    : x(x), y(y), speed_x(speed_x), speed_y(speed_y), radius(radius), texture(texture), topOffset(topOffset) {
 }
 
 void Ball::draw() const {
-    DrawCircle(x, y, radius, ORANGE);
+    DrawTexture(texture, x - texture.width / 2, y - texture.height / 2, WHITE);
+    // DrawCircle(x, y, radius, ORANGE);
 }
 
 void Ball::update(const float delta) {
@@ -20,7 +21,7 @@ void Ball::update(const float delta) {
     if (x - radius < 0 || x + radius > GetScreenWidth()) {
         speed_x *= -1; // Reverse direction on x-axis
     }
-    if (y - radius < 0 || y + radius > GetScreenHeight()) {
+    if (y - radius < topOffset || y + radius > GetScreenHeight()) {
         speed_y *= -1; // Reverse direction on y-axis
     }
 

@@ -6,12 +6,13 @@
 
 #include "raylib.h"
 
-Paddle::Paddle(float x, float y, float width, float height, int speed)
-    : x(x), y(y), width(width), height(height), speed(speed) {
+Paddle::Paddle(float x, float y, float width, float height, int speed, Texture2D texture, int topOffset)
+    : x(x), y(y), width(width), height(height), speed(speed), texture(texture), topOffset(topOffset) {
 }
 
 void Paddle::draw() const {
-    DrawRectangle(x, y, width, height, WHITE);
+    // DrawRectangle(x, y, width, height, WHITE);
+    DrawTexture(texture, x, y, WHITE);
 }
 
 void Paddle::update(float delta) {
@@ -23,16 +24,16 @@ void Paddle::update(float delta) {
     }
 
     // Keep paddle within screen bounds
-    if (y < 0) {
-        y = 0;
+    if (y < topOffset) {
+        y = topOffset;
     }
     if (y + height > GetScreenHeight()) {
         y = GetScreenHeight() - height;
     }
 }
 
-ComputerPaddle::ComputerPaddle(float x, float y, float width, float height, int speed)
-    : Paddle(x, y, width, height, speed) {
+ComputerPaddle::ComputerPaddle(float x, float y, float width, float height, int speed, Texture2D texture)
+    : Paddle(x, y, width, height, speed, texture) {
 }
 
 void ComputerPaddle::update(float delta, int ballY) {
@@ -44,7 +45,7 @@ void ComputerPaddle::update(float delta, int ballY) {
     }
 
     // Keep paddle within screen bounds
-    if (y < 0) {
+    if (y < topOffset) {
         y = 0;
     }
     if (y + height > GetScreenHeight()) {

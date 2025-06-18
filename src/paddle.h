@@ -4,14 +4,17 @@
 
 #ifndef PADDLE_H
 #define PADDLE_H
+#include "raylib.h"
 
 
 class Paddle {
 public:
     float x, y, width, height;
     int speed;
+    Texture2D texture;
+    int topOffset;
 
-    Paddle(float x, float y, float width, float height, int speed);
+    Paddle(float x, float y, float width, float height, int speed, Texture2D texture, int topOffset = 0);
 
     void draw() const;
 
@@ -20,7 +23,7 @@ public:
 
 class ComputerPaddle : public Paddle {
 public:
-    ComputerPaddle(float x, float y, float width, float height, int speed);
+    ComputerPaddle(float x, float y, float width, float height, int speed, Texture2D texture);
 
     void update(float delta, int ballY);
 };

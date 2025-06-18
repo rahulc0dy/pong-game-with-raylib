@@ -15,9 +15,10 @@ public:
     int radius;
     unsigned playerScore = 0;
     unsigned cpuScore = 0;
-    Color ballColor = ORANGE;
+    Texture2D texture;
+    int topOffset = 0;
 
-    Ball(float x, float y, float speed_x, float speed_y, int radius, Color color = ORANGE);
+    Ball(float x, float y, float speed_x, float speed_y, int radius, Texture2D texture, int topOffset = 0);
 
     void update(float delta);
 
