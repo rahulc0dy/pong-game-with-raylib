@@ -5,8 +5,10 @@
 #include "ball.h"
 #include <raylib.h>
 
-Ball::Ball(float x, float y, float speed_x, float speed_y, int radius, Texture2D texture, int topOffset)
-    : x(x), y(y), speed_x(speed_x), speed_y(speed_y), radius(radius), texture(texture), topOffset(topOffset) {
+Ball::Ball(float x, float y, float speed_x, float speed_y, int radius, Texture2D texture, int topOffset,
+           Sound scoreSound)
+    : x(x), y(y), speed_x(speed_x), speed_y(speed_y), radius(radius), texture(texture), topOffset(topOffset),
+      scoreSound(scoreSound) {
 }
 
 void Ball::draw() const {
@@ -27,11 +29,13 @@ void Ball::update(const float delta) {
 
     if (x + radius >= GetScreenWidth()) {
         cpuScore++;
+        PlaySound(scoreSound);
         resetBall();
     }
 
     if (x - radius <= 0) {
         playerScore++;
+        PlaySound(scoreSound);
         resetBall();
     }
 }

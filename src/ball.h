@@ -17,8 +17,10 @@ public:
     unsigned cpuScore = 0;
     Texture2D texture;
     int topOffset = 0;
+    Sound scoreSound;
 
-    Ball(float x, float y, float speed_x, float speed_y, int radius, Texture2D texture, int topOffset = 0);
+    Ball(float x, float y, float speed_x, float speed_y, int radius, Texture2D texture, int topOffset,
+         Sound scoreSound);
 
     void update(float delta);
 
