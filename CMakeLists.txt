@@ -34,5 +34,11 @@ target_link_libraries(pong_game_raylib PRIVATE
 
 # Link to OpenGL on Windows
 if (WIN32)
-    target_link_libraries(pong_game_raylib PRIVATE opengl32)
+    target_link_libraries(pong_game_raylib PRIVATE opengl32 winmm)
 endif ()
+
+# Copy assets to the build directory with custom command
+add_custom_command(TARGET pong_game_raylib POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/assets ${CMAKE_BINARY_DIR}/assets
+)

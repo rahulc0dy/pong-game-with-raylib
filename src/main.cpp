@@ -36,7 +36,6 @@ int main() {
     InitWindow(screenWidth, screenHeight, "Pong");
 
     SetTraceLogLevel(LOG_NONE);
-    SetTraceLogLevel(LOG_NONE);
 
     Image ballImage = LoadImage("assets/ball.png");
     Image paddle1 = LoadImage("assets/paddle1.png");
