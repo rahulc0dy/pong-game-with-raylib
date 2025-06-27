@@ -1,30 +1,38 @@
 cmake_minimum_required(VERSION 3.31)
-project(FlappyBird)
+project(pong_game_raylib)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(FlappyBird
-        src/main.cpp
-        src/ball.cpp
-        src/ball.h
-        src/paddle.cpp
-        src/paddle.h
+include(fetchcontent)
+fetchcontent_declare(raylib
+        GIT_REPOSITORY https://github.com/raysan5/raylib.git
+        GIT_TAG 5.5
+        GIT_SHALLOW ON
+        EXCLUDE_FROM_ALL
+        SYSTEM
 )
 
-set_target_properties(FlappyBird PROPERTIES LINK_FLAGS "-mconsole")
+add_executable(pong_game_raylib
+        src/main.cpp
+        src/ball.cpp
+        include/ball.h
+        src/paddle.cpp
+        include/paddle.h
+)
+
+fetchcontent_makeavailable(raylib)
 
 # Include headers
-target_include_directories(FlappyBird PRIVATE
+target_include_directories(pong_game_raylib PRIVATE
         include
 )
 
 # Link to GLFW statically
-target_link_libraries(FlappyBird PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/lib/libraylib.a
-        winmm
+target_link_libraries(pong_game_raylib PRIVATE
+        raylib
 )
 
 # Link to OpenGL on Windows
 if (WIN32)
-    target_link_libraries(FlappyBird PRIVATE opengl32)
-endif()
+    target_link_libraries(pong_game_raylib PRIVATE opengl32)
+endif ()

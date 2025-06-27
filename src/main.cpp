@@ -1,12 +1,11 @@
-#include <filesystem>
-#include <functional>
-#include <iostream>
+
+#include <complex>
 #include <raylib.h>
-#include <string>
 
 #include "ball.h"
 #include "paddle.h"
 
+const unsigned int winScore = 10;
 
 const Color background = Color{18, 26, 28, 255};
 const Color accent = Color{3, 76, 83, 255};
@@ -14,6 +13,11 @@ const Color accent = Color{3, 76, 83, 255};
 const Color playerColor = Color{146, 255, 236, 255};
 const Color computerColor = Color{234, 134, 161, 255};
 
+enum GameState {
+    MENU,
+    PLAYING,
+    GAME_OVER
+};
 
 int main() {
     int screenWidth = 1200;
@@ -26,15 +30,21 @@ int main() {
     const int paddleHeight = 100;
     const int topOffset = 80;
 
+    GameState state = MENU;
 
     InitAudioDevice();
     InitWindow(screenWidth, screenHeight, "Pong");
 
+    SetTraceLogLevel(LOG_NONE);
+    SetTraceLogLevel(LOG_NONE);
+
     Image ballImage = LoadImage("assets/ball.png");
     Image paddle1 = LoadImage("assets/paddle1.png");
     Image paddle2 = LoadImage("assets/paddle2.png");
+    Image icon = LoadImage("assets/icon.png");
     Sound ballHit = LoadSound("assets/bounce.wav");
     Sound scoreSound = LoadSound("assets/point.wav");
+    Music backgroundMusic = LoadMusicStream("assets/background-music.mp3");
 
     ImageResize(&paddle1, paddleWidth, paddleHeight);
     ImageResize(&paddle2, paddleWidth, paddleHeight);
@@ -47,7 +57,7 @@ int main() {
     const Texture2D paddleTexture2 = LoadTextureFromImage(paddle2);
 
     SetWindowState(FLAG_WINDOW_RESIZABLE);
-    SetWindowIcon(ballImage);
+    SetWindowIcon(icon);
     SetTargetFPS(1000);
 
     Ball ball(
@@ -80,6 +90,8 @@ int main() {
     );
 
 
+    SetMusicVolume(backgroundMusic, 1.0f);
+    PlayMusicStream(backgroundMusic);
     while (!WindowShouldClose()) {
         const float delta = GetFrameTime();
         screenWidth = GetScreenWidth();
@@ -92,72 +104,100 @@ int main() {
             CloseWindow();
         }
 
-        // 2. Updating Positions
-        ball.update(delta);
-        player.update(delta);
-        computer.update(delta, ball.y);
+        UpdateMusicStream(backgroundMusic);
 
-        if (CheckCollisionCircleRec(Vector2{ball.x, ball.y}, ball.radius,
-                                    Rectangle{player.x, player.y, player.width, player.height})) {
-            ball.speed_x *= -1; // Reverse direction on x-axis
-            ball.x = player.x + player.width + ball.radius; // Move ball out of paddle
-            PlaySound(ballHit);
-        }
-
-        if (CheckCollisionCircleRec(Vector2{ball.x, ball.y}, ball.radius,
-                                    Rectangle{computer.x, computer.y, computer.width, computer.height})) {
-            ball.speed_x *= -1; // Reverse direction on x-axis
-            ball.x = computer.x - ball.radius; // Move ball out of paddle
-            PlaySound(ballHit);
-        }
-
-        if (ball.x <= 0 || ball.x >= screenWidth) {
-            PlaySound(scoreSound);
-        }
-
-        computer.x = screenWidth - 30;
-
-        // 3. Drawing
         BeginDrawing();
         ClearBackground(background);
 
-        // Court
-        DrawLine(
-            screenWidth / 2,
-            0,
-            screenWidth / 2,
-            screenHeight,
-            Color{184, 207, 206, 150}
-        );
-        DrawRectangle(0, 0, screenWidth, topOffset, accent);
+        switch (state) {
+            case MENU:
+                DrawText("PONG", screenWidth / 2 - 100, screenHeight / 2 - 60, 64, ORANGE);
+                DrawText("Press ENTER to Play", screenWidth / 2 - 180, screenHeight / 2 + 20, 32, WHITE);
+                DrawText("Game ends when score difference becomes 10", screenWidth / 2 - 360, screenHeight / 2 + 80, 32,
+                         SKYBLUE);
+                ball.cpuScore = ball.playerScore = 0;
+                if (IsKeyPressed(KEY_ENTER)) state = PLAYING;
+                break;
+            case PLAYING: {
+                ball.update(delta);
+                player.update(delta);
+                computer.update(delta, ball.y);
 
-        // Ball and Paddles
-        ball.draw();
-        player.draw();
-        computer.draw();
+                if (CheckCollisionCircleRec(Vector2{ball.x, ball.y}, ball.radius,
+                                            Rectangle{player.x, player.y, player.width, player.height})) {
+                    ball.speed_x *= -1; // Reverse direction on x-axis
+                    ball.x = player.x + player.width + ball.radius; // Move ball out of paddle
+                    PlaySound(ballHit);
+                }
 
-        // scores
-        DrawText(
-            TextFormat("%i", ball.cpuScore),
-            screenWidth / 4,
-            20,
-            32,
-            playerColor
-        );
-        DrawText(
-            TextFormat("%i", ball.playerScore),
-            3 * screenWidth / 4,
-            20,
-            32,
-            computerColor);
+                if (CheckCollisionCircleRec(Vector2{ball.x, ball.y}, ball.radius,
+                                            Rectangle{computer.x, computer.y, computer.width, computer.height})) {
+                    ball.speed_x *= -1; // Reverse direction on x-axis
+                    ball.x = computer.x - ball.radius; // Move ball out of paddle
+                    PlaySound(ballHit);
+                }
 
-        // FPS Counter
-        DrawFPS(GetScreenWidth() - 100, 10);
+                if (ball.x <= 0 || ball.x >= screenWidth) {
+                    PlaySound(scoreSound);
+                }
+
+                computer.x = screenWidth - 30;
+
+                // 3. Drawing
+
+
+                // Court
+                DrawLine(
+                    screenWidth / 2,
+                    0,
+                    screenWidth / 2,
+                    screenHeight,
+                    Color{184, 207, 206, 150}
+                );
+                DrawRectangle(0, 0, screenWidth, topOffset, accent);
+
+                // Ball and Paddles
+                ball.draw();
+                player.draw();
+                computer.draw();
+
+                // scores
+                DrawText(
+                    TextFormat("%i", ball.cpuScore),
+                    screenWidth / 4,
+                    20,
+                    32,
+                    playerColor
+                );
+                DrawText(
+                    TextFormat("%i", ball.playerScore),
+                    3 * screenWidth / 4,
+                    20,
+                    32,
+                    computerColor);
+                // FPS Counter
+                DrawFPS(GetScreenWidth() - 100, 10);
+
+                if (std::abs(static_cast<int>(ball.playerScore - ball.cpuScore)) >= winScore) {
+                    state = GAME_OVER;
+                }
+
+                break;
+            }
+            case GAME_OVER: {
+                DrawText("GAME OVER", screenWidth / 2 - 150, screenHeight / 2 - 60, 64, RED);
+                DrawText("Press R to Restart", screenWidth / 2 - 120, screenHeight / 2 + 20, 32, WHITE);
+                if (IsKeyPressed(KEY_R)) state = MENU;
+                break;
+            }
+        }
 
         EndDrawing();
     }
 
-    UnloadImage(ballImage);
+    StopMusicStream(backgroundMusic);
+    UnloadTexture(paddleTexture1);
+    UnloadTexture(paddleTexture2);
     UnloadTexture(ballTexture);
     CloseWindow();
     return 0;
