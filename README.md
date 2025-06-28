@@ -9,6 +9,17 @@ A simple Pong game implemented in C++ using the [raylib](https://www.raylib.com/
 - Ball bounces off screen edges
 - FPS display
 
+## Screenshots
+
+Menu Screen
+![Menu](assets/start-screen.png)
+
+Game Screen
+![Game](assets/game-screen.png)
+
+Menu Screen
+![Game Over](assets/game-over-screen.png)
+
 ## Requirements
 
 - C++ compiler (e.g., g++, clang++)
