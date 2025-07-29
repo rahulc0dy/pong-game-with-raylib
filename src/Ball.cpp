@@ -2,7 +2,7 @@
 // Created by rahul on 17-06-2025.
 //
 
-#include "ball.h"
+#include "Ball.hpp"
 #include <raylib.h>
 
 Ball::Ball(float x, float y, float speed_x, float speed_y, int radius, Texture2D texture, int topOffset,

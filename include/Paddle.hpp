@@ -1,9 +1,8 @@
 //
 // Created by rahul on 17-06-2025.
 //
+#pragma once
 
-#ifndef PADDLE_H
-#define PADDLE_H
 #include "raylib.h"
 
 
@@ -18,7 +17,13 @@ public:
 
     void draw() const;
 
-    void update(float delta);
+    void updateWASD(float delta);
+
+    void updateArrows(float delta);
+
+    void autoUpdate(float delta, int ballY);
+
+private:
 };
 
 class ComputerPaddle : public Paddle {
@@ -28,5 +33,3 @@ public:
     void update(float delta, int ballY);
 };
 
-
-#endif //PADDLE_H

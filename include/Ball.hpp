@@ -2,9 +2,6 @@
 // Created by rahul on 17-06-2025.
 //
 
-#ifndef BALL_H
-#define BALL_H
-
 #pragma once
 #include "raylib.h"
 
@@ -29,5 +26,3 @@ public:
     void resetBall();
 };
 
-
-#endif //BALL_H
