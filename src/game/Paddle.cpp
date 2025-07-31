@@ -23,7 +23,7 @@ void Paddle::autoUpdate(float delta, int ballY) {
     }
 
     if (y < topOffset) {
-        y = 0;
+        y = topOffset;
     }
     if (y + height > GetScreenHeight()) {
         y = GetScreenHeight() - height;

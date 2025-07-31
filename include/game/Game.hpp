@@ -4,17 +4,12 @@
 
 #include "Ball.hpp"
 #include "Enet.hpp"
+#include "NetworkManager.hpp"
 #include "Paddle.hpp"
-
-
-struct GamePacket {
-    float ballX, ballY, ballSpeedX, ballSpeedY;
-    float playerY, computerY;
-    uint32_t playerScore, cpuScore;
-};
 
 enum GameState {
     Menu,
+    WaitingForPlayer,
     Playing,
     GameOver
 };
@@ -26,7 +21,6 @@ enum GameMode {
     OnlineClient
 };
 
-
 class Game {
 public:
     Game();
@@ -34,21 +28,6 @@ public:
     ~Game();
 
     void start();
-
-private:
-    bool initNetwork(const char *host, uint16_t port);
-
-    void disconnectNetwork();
-
-    void update();
-
-    void sendGameState(const Ball &ball, const Paddle &player1, const Paddle &player2);
-
-    void receiveGameState(Ball &ball, Paddle &player1, Paddle &player2);
-
-    void sendPaddleInput(const Paddle &player);
-
-    void receivePaddleInput(Paddle &player);
 
 private:
     int m_screenWidth = 1200;
@@ -81,6 +60,8 @@ private:
     GameState m_gameState = Menu;
     GameMode m_gameMode = Computer;
 
-    Net::Wrapper m_net;
-    bool m_networkConnected = false;
+    NetworkManager m_networkManager;
+    bool m_showRoomCodeInput = false;
+    char m_roomCodeInput[6] = {0};
+    std::string m_currentRoomCode;
 };

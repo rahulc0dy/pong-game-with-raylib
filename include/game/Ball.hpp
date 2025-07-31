@@ -24,5 +24,7 @@ public:
     void draw() const;
 
     void resetBall();
+
+    void resetScores();
 };
 

@@ -35,10 +35,6 @@ Game::Game() {
     SetWindowState(FLAG_WINDOW_RESIZABLE);
     SetWindowIcon(m_icon);
     SetTargetFPS(1000);
-
-    if (!m_net.init()) {
-        m_networkConnected = false;
-    }
 }
 
 Game::~Game() {
@@ -47,18 +43,7 @@ Game::~Game() {
     UnloadTexture(m_paddleTexture2.value());
     UnloadTexture(m_ballTexture.value());
     CloseWindow();
-}
-
-bool Game::initNetwork(const char *host, uint16_t port) {
-    if (!m_net.init()) {
-        m_networkConnected = false;
-    }
-    m_networkConnected = m_net.connect(host, port);
-    return m_networkConnected;
-}
-
-void Game::disconnectNetwork() {
-    m_net.disconnect();
+    CloseAudioDevice();
 }
 
 void Game::start() {
@@ -88,7 +73,8 @@ void Game::start() {
         m_paddleWidth,
         m_paddleHeight,
         m_paddleSpeed,
-        m_paddleTexture2.value()
+        m_paddleTexture2.value(),
+        m_topOffset
     );
 
     static char ipBuffer[32] = "127.0.0.1";
@@ -96,6 +82,8 @@ void Game::start() {
 
     SetMusicVolume(m_backgroundMusic, 1.0f);
     PlayMusicStream(m_backgroundMusic);
+
+
     while (!WindowShouldClose()) {
         const float delta = GetFrameTime();
         m_screenWidth = GetScreenWidth();
@@ -104,8 +92,10 @@ void Game::start() {
 
 
         // 1. Event Handling
-        if (IsKeyPressed(KEY_ESCAPE)) {
-            CloseWindow();
+        if (IsKeyPressed(KEY_ENTER)) {
+            m_gameState = Menu;
+            ball.resetBall();
+            ball.resetScores();
         }
 
         UpdateMusicStream(m_backgroundMusic);
@@ -131,19 +121,64 @@ void Game::start() {
                 y += btnH + 10;
 
                 if (GuiButton(Rectangle(x, y, btnW, btnH), "Online LAN (Host)")) {
-                    if (m_net.init() && m_net.listen(12345)) {
-                        m_gameMode = OnlineHost;
-                        m_gameState = Playing;
+                    if (m_networkManager.init()) {
+                        std::string roomCode;
+                        if (m_networkManager.hostGame(roomCode)) {
+                            m_currentRoomCode = roomCode;
+                            m_gameMode = OnlineHost;
+                            m_gameState = WaitingForPlayer;
+                        }
                     }
                 }
                 y += btnH + 10;
+
                 if (GuiButton(Rectangle(x, y, btnW, btnH), "Online LAN (Join)")) {
-                    if (m_net.init() && m_net.connect(ipBuffer, 12345)) {
-                        m_gameMode = OnlineClient;
-                        m_gameState = Playing;
+                    m_showRoomCodeInput = true;
+                }
+                if (m_showRoomCodeInput) {
+                    DrawRectangle(m_screenWidth / 2 - 150, m_screenHeight / 2 - 100, 300, 200, Color{0, 0, 0, 200});
+                    DrawRectangleLines(m_screenWidth / 2 - 150, m_screenHeight / 2 - 100, 300, 200, WHITE);
+                    DrawText("Enter Room Code", m_screenWidth / 2 - 100, m_screenHeight / 2 - 80, 20, WHITE);
+
+                    // Room code input box
+                    GuiTextBox(Rectangle{m_screenWidth / 2 - 100, m_screenHeight / 2 - 40, 200, 40},
+                               m_roomCodeInput, 6, true);
+
+                    if (GuiButton(Rectangle{m_screenWidth / 2 - 100, m_screenHeight / 2 + 20, 90, 40}, "Join")) {
+                        if (m_networkManager.init() && m_networkManager.joinGame(m_roomCodeInput)) {
+                            m_gameMode = OnlineClient;
+                            m_gameState = WaitingForPlayer;
+                            m_showRoomCodeInput = false;
+                        }
+                    }
+
+                    if (GuiButton(Rectangle{m_screenWidth / 2 + 10, m_screenHeight / 2 + 20, 90, 40}, "Cancel")) {
+                        m_showRoomCodeInput = false;
                     }
                 }
+
                 DrawText("Use ESC at any time to return", 20, 20, 20, LIGHTGRAY);
+                break;
+            }
+
+            case WaitingForPlayer: {
+                DrawText("Waiting for player...", m_screenWidth / 2 - 150, m_screenHeight / 2 - 40, 30, WHITE);
+
+                if (m_gameMode == OnlineHost) {
+                    DrawText("Room Code:", m_screenWidth / 2 - 150, m_screenHeight / 2 + 20, 20, WHITE);
+                    DrawText(m_currentRoomCode.c_str(), m_screenWidth / 2 + 50, m_screenHeight / 2 + 20, 30, YELLOW);
+                }
+
+                // Update network and check for connection
+                m_networkManager.update();
+                if (m_networkManager.isConnected()) {
+                    m_gameState = Playing;
+                }
+
+                if (IsKeyPressed(KEY_ESCAPE)) {
+                    m_networkManager.disconnect();
+                    m_gameState = Menu;
+                }
                 break;
             }
 
@@ -153,35 +188,36 @@ void Game::start() {
                         player1.updateWASD(delta);
                         player1.updateArrows(delta);
                         player2.autoUpdate(delta, ball.y);
+                        ball.update(delta);
                         break;
                     case Local:
                         player1.updateWASD(delta);
                         player2.updateArrows(delta);
+                        ball.update(delta);
                         break;
                     case OnlineHost:
                         player1.updateWASD(delta);
-                        receivePaddleInput(player2); // remote player1
+                        m_networkManager.getPaddleInput(player2);
                         ball.update(delta);
-                        sendGameState(ball, player1, player2);
+                        m_networkManager.sendGameState(ball, player1, player2);
                         break;
                     case OnlineClient:
-                        player1.updateArrows(delta);
-                        sendPaddleInput(player1);
-                        receiveGameState(ball, player2, player1); // swap paddles
+                        player2.updateArrows(delta);
+                        m_networkManager.sendPaddleInput(player2);
+                        m_networkManager.getGameState(ball, player1, player2);
                         break;
                 }
 
-                ball.update(delta);
+                m_networkManager.update();
 
-                // Collision and scoring logic (shared)
                 if (CheckCollisionCircleRec(Vector2{ball.x, ball.y}, ball.radius,
-                                            Rectangle{player1.x, player1.y, player1.width, player1.height})) {
+                                            Rectangle(player1.x, player1.y, player1.width, player1.height))) {
                     ball.speed_x *= -1;
                     ball.x = player1.x + player1.width + ball.radius;
                     PlaySound(m_ballHit);
                 }
                 if (CheckCollisionCircleRec(Vector2{ball.x, ball.y}, ball.radius,
-                                            Rectangle{player2.x, player2.y, player2.width, player2.height})) {
+                                            Rectangle(player2.x, player2.y, player2.width, player2.height))) {
                     ball.speed_x *= -1;
                     ball.x = player2.x - ball.radius;
                     PlaySound(m_ballHit);
@@ -211,6 +247,7 @@ void Game::start() {
                 DrawText("Press R to Restart", m_screenWidth / 2 - 120, m_screenHeight / 2 + 20, 32, WHITE);
                 if (IsKeyPressed(KEY_R)) {
                     m_gameState = Menu;
+                    ball.resetScores();
                     ball.resetBall();
                 }
                 break;
@@ -219,43 +256,4 @@ void Game::start() {
 
         EndDrawing();
     }
-}
-
-void Game::update() {
-}
-
-void Game::sendGameState(const Ball &ball, const Paddle &player1, const Paddle &player2) {
-    GamePacket pkt{ball.x, ball.y, ball.speed_x, ball.speed_y, player1.y, player2.y, ball.playerScore, ball.cpuScore};
-    m_net.service(0, [](const Net::Event &) {
-    });
-    m_net.send(reinterpret_cast<const uint8_t *>(&pkt), sizeof(pkt));
-}
-
-void Game::receiveGameState(Ball &ball, Paddle &player1, Paddle &player2) {
-    m_net.service(0, [&](const Net::Event &evt) {
-        if (evt.type == Net::EventType::Receive && evt.dataLength == sizeof(GamePacket)) {
-            const GamePacket *pkt = reinterpret_cast<const GamePacket *>(evt.data);
-            ball.x = pkt->ballX;
-            ball.y = pkt->ballY;
-            ball.speed_x = pkt->ballSpeedX;
-            ball.speed_y = pkt->ballSpeedY;
-            player1.y = pkt->playerY;
-            player2.y = pkt->computerY;
-            ball.playerScore = pkt->playerScore;
-            ball.cpuScore = pkt->cpuScore;
-        }
-    });
-}
-
-void Game::sendPaddleInput(const Paddle &player1) {
-    float y = player1.y;
-    m_net.send(reinterpret_cast<const uint8_t *>(&y), sizeof(y));
-}
-
-void Game::receivePaddleInput(Paddle &player1) {
-    m_net.service(0, [&](const Net::Event &evt) {
-        if (evt.type == Net::EventType::Receive && evt.dataLength == sizeof(float)) {
-            player1.y = *reinterpret_cast<const float *>(evt.data);
-        }
-    });
 }

@@ -48,3 +48,9 @@ void Ball::resetBall() {
     speed_x *= directions[GetRandomValue(0, 1)];
     speed_y *= directions[GetRandomValue(0, 1)];
 }
+
+void Ball::resetScores() {
+    playerScore = 0;
+    cpuScore = 0;
+}
+
