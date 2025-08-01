@@ -25,23 +25,32 @@ bool NetworkManager::init() {
 }
 
 bool NetworkManager::hostGame(std::string &outRoomCode) {
-    if (m_state != NetworkState::Disconnected)
-        return false;
+    if (m_state != NetworkState::Disconnected) return false;
 
-    if (!m_net.connect("127.0.0.1", PORT_NUMBER))
+    if (!m_net.connect("127.0.0.1", PORT_NUMBER)) {
+        std::cerr << "hostGame: connection to localhost:" << PORT_NUMBER << " failed\n";
         return false;
+    }
+
+    bool connected = false;
+    m_net.service(5000, [&](const Net::Event &evt) {
+        if (evt.type == Net::EventType::Connect) connected = true;
+    });
+    if (!connected) {
+        std::cerr << "hostGame: ENet handshake to server timed out\n";
+        m_net.disconnect();
+        return false;
+    }
 
     m_state = NetworkState::Connecting;
     m_isHost = true;
-
-    // Start network thread
     m_running = true;
     m_thread = std::thread(&NetworkManager::networkThread, this);
 
-    // Wait for room creation
     std::unique_lock<std::mutex> lock(m_stateMutex);
     if (!m_stateCV.wait_for(lock, std::chrono::seconds(5),
                             [this] { return m_state == NetworkState::HostingWaiting; })) {
+        std::cerr << "hostGame: waiting for room code timed out\n";
         disconnect();
         return false;
     }
@@ -51,27 +60,36 @@ bool NetworkManager::hostGame(std::string &outRoomCode) {
 }
 
 bool NetworkManager::joinGame(const std::string &roomCode) {
-    if (m_state != NetworkState::Disconnected)
-        return false;
+    if (m_state != NetworkState::Disconnected) return false;
 
-    if (!m_net.connect("127.0.0.1", PORT_NUMBER))
+    if (!m_net.connect("127.0.0.1", PORT_NUMBER)) {
+        std::cerr << "joinGame: connection to localhost:" << PORT_NUMBER << " failed\n";
         return false;
+    }
+
+    bool connected = false;
+    m_net.service(5000, [&](const Net::Event &evt) {
+        if (evt.type == Net::EventType::Connect) connected = true;
+    });
+    if (!connected) {
+        std::cerr << "joinGame: ENet handshake to server timed out\n";
+        m_net.disconnect();
+        return false;
+    }
 
     m_state = NetworkState::Connecting;
     m_isHost = false;
     m_roomCode = roomCode;
-
-    // Start network thread
     m_running = true;
     m_thread = std::thread(&NetworkManager::networkThread, this);
 
-    // Wait for room join
     std::unique_lock<std::mutex> lock(m_stateMutex);
     if (!m_stateCV.wait_for(lock, std::chrono::seconds(5),
                             [this] {
                                 return m_state == NetworkState::JoinedWaiting
                                        || m_state == NetworkState::Connected;
                             })) {
+        std::cerr << "joinGame: waiting for join confirmation timed out\n";
         disconnect();
         return false;
     }

@@ -4,6 +4,7 @@
 #include "Paddle.hpp"
 
 #define RAYGUI_IMPLEMENTATION
+#include <iostream>
 #include <raygui.h>
 
 
@@ -109,51 +110,55 @@ void Game::start() {
                 constexpr float btnH = 50.0f;
                 const float x = m_screenWidth / 2 - btnW / 2;
                 float y = m_screenHeight / 2 - 2 * (btnH + 10);
-                if (GuiButton(Rectangle(x, y, btnW, btnH), "Vs Computer")) {
-                    m_gameMode = Computer;
-                    m_gameState = Playing;
-                }
-                y += btnH + 10;
-                if (GuiButton(Rectangle(x, y, btnW, btnH), "Local: WASD + Arrows")) {
-                    m_gameMode = Local;
-                    m_gameState = Playing;
-                }
-                y += btnH + 10;
 
-                if (GuiButton(Rectangle(x, y, btnW, btnH), "Online LAN (Host)")) {
-                    if (m_networkManager.init()) {
-                        std::string roomCode;
-                        if (m_networkManager.hostGame(roomCode)) {
-                            m_currentRoomCode = roomCode;
-                            m_gameMode = OnlineHost;
-                            m_gameState = WaitingForPlayer;
-                        }
-                    }
-                }
-                y += btnH + 10;
-
-                if (GuiButton(Rectangle(x, y, btnW, btnH), "Online LAN (Join)")) {
-                    m_showRoomCodeInput = true;
-                }
                 if (m_showRoomCodeInput) {
-                    DrawRectangle(m_screenWidth / 2 - 150, m_screenHeight / 2 - 100, 300, 200, Color{0, 0, 0, 200});
+                    DrawRectangle(m_screenWidth / 2 - 150, m_screenHeight / 2 - 100, 300, 200, {0, 0, 0, 200});
                     DrawRectangleLines(m_screenWidth / 2 - 150, m_screenHeight / 2 - 100, 300, 200, WHITE);
                     DrawText("Enter Room Code", m_screenWidth / 2 - 100, m_screenHeight / 2 - 80, 20, WHITE);
 
-                    // Room code input box
-                    GuiTextBox(Rectangle{m_screenWidth / 2 - 100, m_screenHeight / 2 - 40, 200, 40},
-                               m_roomCodeInput, 6, true);
+                    GuiTextBox({m_screenWidth / 2 - 100, m_screenHeight / 2 - 40, 200, 40}, m_roomCodeInput, 6, true);
 
-                    if (GuiButton(Rectangle{m_screenWidth / 2 - 100, m_screenHeight / 2 + 20, 90, 40}, "Join")) {
+                    if (GuiButton({m_screenWidth / 2 - 100, m_screenHeight / 2 + 20, 90, 40}, "Join")) {
                         if (m_networkManager.init() && m_networkManager.joinGame(m_roomCodeInput)) {
                             m_gameMode = OnlineClient;
                             m_gameState = WaitingForPlayer;
                             m_showRoomCodeInput = false;
                         }
                     }
-
-                    if (GuiButton(Rectangle{m_screenWidth / 2 + 10, m_screenHeight / 2 + 20, 90, 40}, "Cancel")) {
+                    if (GuiButton({m_screenWidth / 2 + 10, m_screenHeight / 2 + 20, 90, 40}, "Cancel")) {
                         m_showRoomCodeInput = false;
+                    }
+                } else {
+                    if (GuiButton(Rectangle(x, y, btnW, btnH), "Vs Computer")) {
+                        m_gameMode = Computer;
+                        m_gameState = Playing;
+                    }
+                    y += btnH + 10;
+                    if (GuiButton(Rectangle(x, y, btnW, btnH), "Local: WASD + Arrows")) {
+                        m_gameMode = Local;
+                        m_gameState = Playing;
+                    }
+                    y += btnH + 10;
+
+                    if (GuiButton(Rectangle(x, y, btnW, btnH), "Online LAN (Host)")) {
+                        if (!m_networkManager.init()) {
+                            std::cerr << "NetworkManager::init() failed\n";
+                        } else {
+                            std::string roomCode;
+                            if (!m_networkManager.hostGame(roomCode)) {
+                                std::cerr << "hostGame() failed, make sure `server.exe` is running on port "
+                                        << PORT_NUMBER << "\n";
+                            } else {
+                                m_currentRoomCode = roomCode;
+                                m_gameMode = OnlineHost;
+                                m_gameState = WaitingForPlayer;
+                            }
+                        }
+                    }
+                    y += btnH + 10;
+
+                    if (GuiButton(Rectangle(x, y, btnW, btnH), "Online LAN (Join)")) {
+                        m_showRoomCodeInput = true;
                     }
                 }
 
